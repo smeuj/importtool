@@ -61,8 +61,15 @@ def save(state):
     with open(state.out_path, "w", encoding = "utf-8") as dest:
         json.dump(state.smeuj, dest, indent = 4)
 
-def undo(state):
-    state.smeuj.pop()
+def delete(state, trv_smeuj):
+    selection = trv_smeuj.selection()
+    indices   = { trv_smeuj.index(item) for item in selection }
+    trv_smeuj.delete(*selection)
+    state.smeuj = [
+        smeu for i, smeu in enumerate(state.smeuj)
+        if i not in indices
+    ]
+    save(state)
 
 def setup_ui(state):
     ui = tk.Tk()
@@ -142,6 +149,9 @@ def setup_ui(state):
         add_smeu, state, trv_smeuj,
         author, inspiration, date, time, content, example
     ))
+    btn_delete = tk.Button(text = "Delete", command = apply(
+        delete, state, trv_smeuj
+    ))
     btn_next = tk.Button(text = "Next", command = apply(
         change_chat_entry, 1, state, author, inspiration, date, time, content,
         example
@@ -150,14 +160,11 @@ def setup_ui(state):
         change_chat_entry, -1, state, author, inspiration, date, time, content,
         example
     ))
-    btn_save = tk.Button(text = "Save", command = apply(save, state))
-    btn_undo = tk.Button(text = "Undo", command = apply(undo, state))
 
     btn_add.pack()
     btn_next.pack()
     btn_prev.pack()
-    btn_save.pack()
-    btn_undo.pack()
+    btn_delete.pack()
 
     return ui
 
