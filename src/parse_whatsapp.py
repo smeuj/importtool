@@ -12,6 +12,7 @@ pat_time      = f"({pat_hours}):({pat_minutes})"
 pat_date_time = f"({pat_date}), ({pat_time})"
 pat_name      = r"[^:]+"
 pat_message   = f"^{pat_date_time} - ({pat_name}): (.*)$"
+pat_system    = f"^{pat_date_time} - (.*)$"
 
 def main(in_path, out_path):
     entries = []
@@ -23,7 +24,16 @@ def main(in_path, out_path):
             line = line.strip()
             result = re.match(pat_message, line)
             if not result:
-                entries[-1]["message"] += f"\n{line}"
+                result = re.match(pat_system, line)
+                if result:
+                    entries.append({
+                        "date":    result.group(1),
+                        "time":    result.group(5),
+                        "author":  None,
+                        "message": result.group(8)
+                    })
+                else:
+                    entries[-1]["message"] += f"\n{line}"
             else:
                 entries.append({
                     "date":    result.group(1),
