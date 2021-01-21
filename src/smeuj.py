@@ -43,8 +43,8 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content, example
     state.smeuj.append(smeu)
     save(state)
 
-def change_chat_entry(step, state, author, inspiration, date, time, content, example):
-    state.index += step
+def change_chat_entry(index, state, author, inspiration, date, time, content, example):
+    state.index = index
     if state.index < 0:
         state.index = len(state.chat) - 1
     elif state.index >= len(state.chat):
@@ -56,6 +56,20 @@ def change_chat_entry(step, state, author, inspiration, date, time, content, exa
     time.set(entry["time"])
     content.set(entry["message"])
     example.set("")
+
+def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration, date, time, content, example):
+    selection = trv_chat.identify("item", event.x, event.y)
+    if selection:
+        change_chat_entry(
+            trv_chat.index(selection), state,
+            author, inspiration, date, time, content, example
+        )
+
+def decrement_chat_entry(state, author, inspiration, date, time, content, example):
+    change_chat_entry(state.index - 1, state, author, inspiration, date, time, content, example)
+
+def increment_chat_entry(state, author, inspiration, date, time, content, example):
+    change_chat_entry(state.index + 1, state, author, inspiration, date, time, content, example)
 
 def save(state):
     with open(state.out_path, "w", encoding = "utf-8") as dest:
@@ -112,6 +126,37 @@ def setup_ui(state):
             )
         )
 
+    trv_chat = ttk.Treeview(ui)
+    trv_chat["columns"] = (
+        "date", "time", "author", "message"
+    )
+
+    trv_chat.column("#0", width = 0, stretch = False)
+    trv_chat.column("date",    anchor = tk.W, width = 60,  stretch = False)
+    trv_chat.column("time",    anchor = tk.W, width = 60,  stretch = False)
+    trv_chat.column("author",  anchor = tk.W, width = 120, stretch = False)
+    trv_chat.column("message", anchor = tk.W, width = 360, stretch = False)
+
+    trv_chat.heading("#0", text = "")
+    trv_chat.heading("date",    anchor = tk.W, text = "Date")
+    trv_chat.heading("time",    anchor = tk.W, text = "Time")
+    trv_chat.heading("author",  anchor = tk.W, text = "Author")
+    trv_chat.heading("message", anchor = tk.W, text = "Message")
+
+    for entry in state.chat:
+        trv_chat.insert(
+            parent = "",
+            index  = "end",
+            iid    = None,
+            text   = "",
+            values = (
+                entry["date"],
+                entry["time"],
+                entry["author"],
+                entry["message"]
+            )
+        )
+
     author          = tk.StringVar()
     lbl_author      = tk.Label(text = "Author")
     ent_author      = tk.Entry(textvariable = author)
@@ -126,12 +171,13 @@ def setup_ui(state):
     ent_time        = tk.Entry(textvariable = time)
     content         = tk.StringVar()
     lbl_content     = tk.Label(text = "Content")
-    ent_content     = tk.Entry(textvariable = content, width = 256)
+    ent_content     = tk.Entry(textvariable = content, width = 128)
     example         = tk.StringVar()
     lbl_example     = tk.Label(text = "Example")
     ent_example     = tk.Entry(textvariable = example)
 
     trv_smeuj.pack()
+    trv_chat.pack()
     lbl_author.pack()
     ent_author.pack()
     lbl_inspiration.pack()
@@ -145,6 +191,11 @@ def setup_ui(state):
     lbl_example.pack()
     ent_example.pack()
 
+    trv_chat.bind("<Button-1>", lambda event: change_chat_entry_to_selected(
+        event, trv_chat, state,
+        author, inspiration, date, time, content, example
+    ))
+
     btn_add  = tk.Button(text = "Add",  command = apply(
         add_smeu, state, trv_smeuj,
         author, inspiration, date, time, content, example
@@ -153,12 +204,12 @@ def setup_ui(state):
         delete, state, trv_smeuj
     ))
     btn_next = tk.Button(text = "Next", command = apply(
-        change_chat_entry, 1, state, author, inspiration, date, time, content,
-        example
+        increment_chat_entry, state,
+        author, inspiration, date, time, content, example
     ))
     btn_prev = tk.Button(text = "Previous", command = apply(
-        change_chat_entry, -1, state, author, inspiration, date, time, content,
-        example
+        decrement_chat_entry, state,
+        author, inspiration, date, time, content, example
     ))
 
     btn_add.pack()
