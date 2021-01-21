@@ -3,6 +3,8 @@ import re
 import json
 import sys
 
+from tkinter import ttk
+
 class State:
     def __init__(self, out_path, smeuj = [], chat = [], index = -1):
         self.out_path = out_path
@@ -50,6 +52,43 @@ def setup_ui(state):
     ui = tk.Tk()
     ui.title("Smeuj")
 
+    trv_smeuj = ttk.Treeview(ui)
+    trv_smeuj["columns"] = (
+        "author", "inspiration", "date", "time", "content", "example"
+    )
+
+    trv_smeuj.column("#0", width = 0, stretch = False)
+    trv_smeuj.column("author",      anchor = tk.W, width = 120, stretch = False)
+    trv_smeuj.column("inspiration", anchor = tk.W, width = 120, stretch = False)
+    trv_smeuj.column("date",        anchor = tk.W, width = 60, stretch = False)
+    trv_smeuj.column("time",        anchor = tk.W, width = 60, stretch = False)
+    trv_smeuj.column("content",     anchor = tk.W, width = 120, stretch = False)
+    trv_smeuj.column("example",     anchor = tk.W, width = 120, stretch = False)
+
+    trv_smeuj.heading("#0", text = "")
+    trv_smeuj.heading("author",      anchor = tk.W, text = "Author")
+    trv_smeuj.heading("inspiration", anchor = tk.W, text = "Inspiration")
+    trv_smeuj.heading("date",        anchor = tk.W, text = "Date")
+    trv_smeuj.heading("time",        anchor = tk.W, text = "Time")
+    trv_smeuj.heading("content",     anchor = tk.W, text = "Content")
+    trv_smeuj.heading("example",     anchor = tk.W, text = "Example")
+
+    for smeu in state.smeuj:
+        trv_smeuj.insert(
+            parent = "",
+            index  = "end",
+            iid    = None,
+            text   = "",
+            values = (
+                smeu["author"],
+                smeu["inspiration"],
+                smeu["date"],
+                smeu["time"],
+                smeu["content"],
+                smeu["example"]
+            )
+        )
+
     author          = tk.StringVar()
     lbl_author      = tk.Label(text = "Author")
     ent_author      = tk.Entry(textvariable = author)
@@ -69,6 +108,7 @@ def setup_ui(state):
     lbl_example     = tk.Label(text = "Example")
     ent_example     = tk.Entry(textvariable = example)
 
+    trv_smeuj.pack()
     lbl_author.pack()
     ent_author.pack()
     lbl_inspiration.pack()
@@ -104,16 +144,19 @@ def setup_ui(state):
 
     return ui
 
-def main(in_path, out_path):
-    chat = None
-    with open(in_path, encoding = "utf-8") as source:
+def main(chat_path, smeuj_path):
+    chat  = None
+    smeuj = None
+    with open(chat_path, encoding = "utf-8") as source:
         chat = json.load(source)
+    with open(smeuj_path, encoding = "utf-8") as source:
+        smeuj = json.load(source)
 
-    ui = setup_ui(State(out_path, chat = chat))
+    ui = setup_ui(State(smeuj_path, chat = chat, smeuj = smeuj))
     ui.mainloop()
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python smeuj.py <input_path> <output_path>")
+        print("Usage: python smeuj.py <chat_path> <smeuj_path>")
     else:
         main(sys.argv[1], sys.argv[2])
