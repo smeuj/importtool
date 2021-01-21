@@ -2,6 +2,7 @@ import tkinter as tk
 import re
 import json
 import sys
+import os
 
 from tkinter import ttk
 
@@ -222,10 +223,13 @@ def setup_ui(state):
 def main(chat_path, smeuj_path):
     chat  = None
     smeuj = None
-    with open(chat_path, encoding = "utf-8") as source:
-        chat = json.load(source)
-    with open(smeuj_path, encoding = "utf-8") as source:
-        smeuj = json.load(source)
+    with open(chat_path, encoding = "utf-8") as file:
+        chat = json.load(file)
+    if not os.path.exists(smeuj_path):
+        with open(smeuj_path, "w", encoding = "utf-8") as file:
+            json.dump([], file)
+    with open(smeuj_path, encoding = "utf-8") as file:
+        smeuj = json.load(file)
 
     ui = setup_ui(State(smeuj_path, chat = chat, smeuj = smeuj))
     ui.mainloop()
