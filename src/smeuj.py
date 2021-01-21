@@ -17,15 +17,31 @@ def apply(f, *args):
         f(*args)
     return g
 
-def add_smeu(state, author, inspiration, date, time, content, example):
-    state.smeuj.append({
+def add_smeu(state, trv_smeuj, author, inspiration, date, time, content, example):
+    smeu = {
         "author":      author.get(),
         "inspiration": inspiration.get() if inspiration.get() else None,
         "date":        date.get(),
         "time":        time.get(),
         "content":     content.get(),
         "example":     example.get() if example.get() else None
-    })
+    }
+    trv_smeuj.insert(
+        parent = "",
+        index  = "end",
+        iid    = None,
+        text   = "",
+        values = (
+            smeu["author"],
+            smeu["inspiration"],
+            smeu["date"],
+            smeu["time"],
+            smeu["content"],
+            smeu["example"]
+        )
+    )
+    state.smeuj.append(smeu)
+    save(state)
 
 def change_chat_entry(step, state, author, inspiration, date, time, content, example):
     state.index += step
@@ -123,7 +139,8 @@ def setup_ui(state):
     ent_example.pack()
 
     btn_add  = tk.Button(text = "Add",  command = apply(
-        add_smeu, state, author, inspiration, date, time, content, example
+        add_smeu, state, trv_smeuj,
+        author, inspiration, date, time, content, example
     ))
     btn_next = tk.Button(text = "Next", command = apply(
         change_chat_entry, 1, state, author, inspiration, date, time, content,
