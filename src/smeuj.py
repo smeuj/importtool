@@ -18,7 +18,8 @@ def apply(f, *args):
         f(*args)
     return g
 
-def add_smeu(state, trv_smeuj, author, inspiration, date, time, content, example):
+def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
+        example):
     smeu = {
         "author":      author.get(),
         "inspiration": inspiration.get() if inspiration.get() else None,
@@ -44,7 +45,8 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content, example
     state.smeuj.append(smeu)
     save(state)
 
-def change_chat_entry(index, state, author, inspiration, date, time, content, example):
+def change_chat_entry(index, state, author, inspiration, date, time, content,
+        example):
     state.index = index
     if state.index < 0:
         state.index = len(state.chat) - 1
@@ -58,7 +60,8 @@ def change_chat_entry(index, state, author, inspiration, date, time, content, ex
     content.set(entry["message"])
     example.set("")
 
-def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration, date, time, content, example):
+def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration,
+        date, time, content, example):
     selection = trv_chat.identify("item", event.x, event.y)
     if selection:
         change_chat_entry(
@@ -66,11 +69,19 @@ def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration, d
             author, inspiration, date, time, content, example
         )
 
-def decrement_chat_entry(state, author, inspiration, date, time, content, example):
-    change_chat_entry(state.index - 1, state, author, inspiration, date, time, content, example)
+def decrement_chat_entry(state, author, inspiration, date, time, content,
+        example):
+    change_chat_entry(
+        state.index - 1, state,
+        author, inspiration, date, time, content, example
+    )
 
-def increment_chat_entry(state, author, inspiration, date, time, content, example):
-    change_chat_entry(state.index + 1, state, author, inspiration, date, time, content, example)
+def increment_chat_entry(state, author, inspiration, date, time, content,
+        example):
+    change_chat_entry(
+        state.index + 1, state,
+        author, inspiration, date, time, content, example
+    )
 
 def save(state):
     with open(state.out_path, "w", encoding = "utf-8") as dest:
