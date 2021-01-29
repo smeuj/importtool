@@ -18,16 +18,16 @@ def apply(f, *args):
         f(*args)
     return g
 
-def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
-        example):
-    smeu = {
-        "author":      author.get(),
-        "inspiration": inspiration.get() if inspiration.get() else None,
-        "date":        date.get(),
-        "time":        time.get(),
-        "content":     content.get(),
-        "example":     example.get() if example.get() else None
-    }
+def intercalate_str(xs, y):
+    if not xs:
+        return ""
+    r = xs[0]
+    for x in xs[1:]:
+        r += y
+        r += x
+    return r
+
+def insert_smeu(trv_smeuj, smeu):
     trv_smeuj.insert(
         parent = "",
         index  = "end",
@@ -35,13 +35,31 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
         text   = "",
         values = (
             smeu["author"],
-            smeu["inspiration"],
+            intercalate_str(smeu["inspirations"], ";")
+            if smeu["inspirations"] else None,
             smeu["date"],
             smeu["time"],
             smeu["content"],
-            smeu["example"]
+            smeu["examples"][0]["content"] if smeu["examples"] else None
         )
     )
+
+def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
+        example):
+    smeu = {
+        "author":       author.get(),
+        "inspirations": inspiration.get().split(";") if inspiration.get() else [],
+        "date":         date.get(),
+        "time":         time.get(),
+        "content":      content.get(),
+        "examples":     [{
+            "content": example.get(),
+            "author":  None,
+            "date":    None,
+            "time":    None
+        }] if example.get() else []
+    }
+    insert_smeu(trv_smeuj, smeu)
     state.smeuj.append(smeu)
     save(state)
     trv_smeuj.yview("moveto", 1.0)
@@ -124,20 +142,7 @@ def setup_ui(state):
     trv_smeuj.heading("example",     anchor = tk.W, text = "Example")
 
     for smeu in state.smeuj:
-        trv_smeuj.insert(
-            parent = "",
-            index  = "end",
-            iid    = None,
-            text   = "",
-            values = (
-                smeu["author"],
-                smeu["inspiration"],
-                smeu["date"],
-                smeu["time"],
-                smeu["content"],
-                smeu["example"]
-            )
-        )
+        insert_smeu(trv_smeuj, smeu)
 
     trv_chat = ttk.Treeview(ui)
     trv_chat["columns"] = (
