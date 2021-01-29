@@ -44,6 +44,7 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
     )
     state.smeuj.append(smeu)
     save(state)
+    trv_smeuj.yview("moveto", 1.0)
 
 def change_chat_entry(index, state, author, inspiration, date, time, content,
         example):
