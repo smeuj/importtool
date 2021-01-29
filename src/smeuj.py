@@ -57,7 +57,7 @@ def change_chat_entry(index, state, author, inspiration, date, time, content,
     inspiration.set("")
     date.set(entry["date"])
     time.set(entry["time"])
-    content.set(entry["message"])
+    content.set(entry["message"].lower())
     example.set("")
 
 def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration,
