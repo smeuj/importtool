@@ -89,7 +89,7 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
     # trv_smeuj.see()
     trv_smeuj.yview("moveto", 1.0)
 
-def change_chat_entry(index, state, author, inspiration, date, time, content,
+def change_chat_entry(index, state, counter, author, inspiration, date, time, content,
         example, ex_author, ex_date, ex_time):
     state.selected_smeu = None
     state.index = index
@@ -97,23 +97,24 @@ def change_chat_entry(index, state, author, inspiration, date, time, content,
         state.index = len(state.chat) - 1
     elif state.index >= len(state.chat):
         state.index = 0
+    counter.set(f"Chat: {state.index + 1}/{len(state.chat)}")
     entry = state.chat[state.index]
     author.set(entry["author"])
     inspiration.set("")
     date.set(entry["date"])
     time.set(entry["time"])
-    content.set(entry["message"].lower())
+    content.set(entry["message"].replace("_", "").lower())
     example.set("")
     ex_author.set("")
     ex_date.set("")
     ex_time.set("")
 
-def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration,
+def change_chat_entry_to_selected(event, trv_chat, state, counter, author, inspiration,
         date, time, content, example, ex_author, ex_date, ex_time):
     selection = trv_chat.identify("item", event.x, event.y)
     if selection:
         change_chat_entry(
-            trv_chat.index(selection), state,
+            trv_chat.index(selection), state, counter,
             author, inspiration, date, time, content, example,
             ex_author, ex_date, ex_time
         )
@@ -237,6 +238,8 @@ def setup_ui(state):
             )
         )
 
+    counter         = tk.StringVar()
+    lbl_counter     = tk.Label(textvariable = counter)
     author          = tk.StringVar()
     lbl_author      = tk.Label(text = "Author")
     ent_author      = tk.Entry(textvariable = author)
@@ -266,6 +269,7 @@ def setup_ui(state):
     ent_ex_time     = tk.Entry(textvariable = ex_time)
 
     trv_smeuj.pack()
+    lbl_counter.pack()
     trv_chat.pack()
     lbl_author.pack()
     ent_author.pack()
@@ -287,7 +291,7 @@ def setup_ui(state):
     ent_ex_time.pack()
 
     trv_chat.bind("<Button-1>", lambda event: change_chat_entry_to_selected(
-        event, trv_chat, state,
+        event, trv_chat, state, counter,
         author, inspiration, date, time, content,
         example, ex_author, ex_date, ex_time
     ))
