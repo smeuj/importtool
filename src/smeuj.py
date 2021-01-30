@@ -8,10 +8,11 @@ from tkinter import ttk
 
 class State:
     def __init__(self, out_path, smeuj = [], chat = [], index = -1):
-        self.out_path = out_path
-        self.smeuj    = smeuj
-        self.chat     = chat
-        self.index    = index
+        self.out_path      = out_path
+        self.smeuj         = smeuj
+        self.chat          = chat
+        self.index         = index
+        self.selected_smeu = None
 
 def apply(f, *args):
     def g():
@@ -27,10 +28,10 @@ def intercalate_str(xs, y):
         r += x
     return r
 
-def insert_smeu(trv_smeuj, smeu):
+def insert_smeu(trv_smeuj, smeu, index = "end"):
     trv_smeuj.insert(
         parent = "",
-        index  = "end",
+        index  = index,
         iid    = None,
         text   = "",
         values = (
@@ -44,11 +45,11 @@ def insert_smeu(trv_smeuj, smeu):
         )
     )
 
-def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
-        example):
-    smeu = {
+def make_smeu(author, inspiration, date, time, content, example):
+    return {
         "author":       author.get(),
-        "inspirations": inspiration.get().split(";") if inspiration.get() else [],
+        "inspirations": inspiration.get().split(";")
+        if inspiration.get() else [],
         "date":         date.get(),
         "time":         time.get(),
         "content":      content.get(),
@@ -59,13 +60,19 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
             "time":    None
         }] if example.get() else []
     }
+
+def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
+        example):
+    smeu = make_smeu(author, inspiration, date, time, content, example)
     insert_smeu(trv_smeuj, smeu)
     state.smeuj.append(smeu)
     save(state)
+    # trv_smeuj.see()
     trv_smeuj.yview("moveto", 1.0)
 
 def change_chat_entry(index, state, author, inspiration, date, time, content,
         example):
+    state.selected_smeu = None
     state.index = index
     if state.index < 0:
         state.index = len(state.chat) - 1
@@ -88,6 +95,24 @@ def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration,
             author, inspiration, date, time, content, example
         )
 
+def change_smeu_entry_to_selected(event, trv_smeuj, state, author, inspiration,
+        date, time, content, example):
+    state.selected_smeu = None
+    selection = trv_smeuj.identify("item", event.x, event.y)
+    if not selection:
+        return
+    state.selected_smeu = trv_smeuj.index(selection)
+    entry = state.smeuj[state.selected_smeu]
+    author.set(entry["author"])
+    inspiration.set(intercalate_str(entry["inspirations"], ";"))
+    date.set(entry["date"])
+    time.set(entry["time"])
+    content.set(entry["content"])
+    example.set(
+        entry["examples"][0]["content"]
+        if entry["examples"] else ""
+    )
+
 def decrement_chat_entry(state, author, inspiration, date, time, content,
         example):
     change_chat_entry(
@@ -101,6 +126,22 @@ def increment_chat_entry(state, author, inspiration, date, time, content,
         state.index + 1, state,
         author, inspiration, date, time, content, example
     )
+
+def edit(state, trv_smeuj, author, inspiration, date, time, content, example):
+    if not state.selected_smeu:
+        return
+    selection = trv_smeuj.selection()
+    indices   = { trv_smeuj.index(item) for item in selection }
+    if len(indices) != 1:
+        state.selected_smeu = None
+        return
+    smeu = make_smeu(
+        author, inspiration, date, time, content, example
+    )
+    state.smeuj[state.selected_smeu] = smeu
+    trv_smeuj.delete(*selection)
+    insert_smeu(trv_smeuj, smeu, index = state.selected_smeu)
+    save(state)
 
 def save(state):
     with open(state.out_path, "w", encoding = "utf-8") as dest:
@@ -121,6 +162,7 @@ def setup_ui(state):
     ui.title("Smeuj")
 
     trv_smeuj = ttk.Treeview(ui)
+    
     trv_smeuj["columns"] = (
         "author", "inspiration", "date", "time", "content", "example"
     )
@@ -213,7 +255,10 @@ def setup_ui(state):
         event, trv_chat, state,
         author, inspiration, date, time, content, example
     ))
-
+    trv_smeuj.bind("<Button-1>", lambda event: change_smeu_entry_to_selected(
+        event, trv_smeuj, state,
+        author, inspiration, date, time, content, example
+    ))
     btn_add  = tk.Button(text = "Add",  command = apply(
         add_smeu, state, trv_smeuj,
         author, inspiration, date, time, content, example
@@ -229,11 +274,16 @@ def setup_ui(state):
         decrement_chat_entry, state,
         author, inspiration, date, time, content, example
     ))
+    btn_edit = tk.Button(text = "Edit", command = apply(
+        edit, state, trv_smeuj,
+        author, inspiration, date, time, content, example
+    ))
 
     btn_add.pack()
-    btn_next.pack()
-    btn_prev.pack()
+    # btn_next.pack()
+    # btn_prev.pack()
     btn_delete.pack()
+    btn_edit.pack()
 
     return ui
 
