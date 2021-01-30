@@ -19,6 +19,9 @@ def apply(f, *args):
         f(*args)
     return g
 
+def all_equal(xs):
+    return len(set(xs)) <= 1
+
 def intercalate_str(xs, y):
     if not xs:
         return ""
@@ -41,11 +44,20 @@ def insert_smeu(trv_smeuj, smeu, index = "end"):
             smeu["date"],
             smeu["time"],
             smeu["content"],
-            smeu["examples"][0]["content"] if smeu["examples"] else None
+            intercalate_str(
+                [example["content"] for example in smeu["examples"]], ";"
+            ) if smeu["examples"] else None
         )
     )
 
-def make_smeu(author, inspiration, date, time, content, example):
+def make_smeu(author, inspiration, date, time, content, example, ex_author,
+        ex_date, ex_time):
+    ex_contents = example.get().split(";")   if example.get() else []
+    ex_authors  = ex_author.get().split(";") if ex_author.get() else []
+    ex_dates    = ex_date.get().split(";")   if ex_date.get() else []
+    ex_times    = ex_time.get().split(";")   if ex_time.get() else []
+    if not all_equal(map(len, [ex_contents, ex_authors, ex_dates, ex_times])):
+        return None
     return {
         "author":       author.get(),
         "inspirations": inspiration.get().split(";")
@@ -53,17 +65,24 @@ def make_smeu(author, inspiration, date, time, content, example):
         "date":         date.get(),
         "time":         time.get(),
         "content":      content.get(),
-        "examples":     [{
-            "content": example.get(),
-            "author":  None,
-            "date":    None,
-            "time":    None
-        }] if example.get() else []
+        "examples":     [
+            {
+                "content": ex_content,
+                "author":  ex_author,
+                "date":    ex_date,
+                "time":    ex_time
+            }
+            for ex_content, ex_author, ex_date, ex_time
+            in zip(ex_contents, ex_authors, ex_dates, ex_times)
+        ]
     }
 
 def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
-        example):
-    smeu = make_smeu(author, inspiration, date, time, content, example)
+        example, ex_author, ex_date, ex_time):
+    smeu = make_smeu(
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
+    )
     insert_smeu(trv_smeuj, smeu)
     state.smeuj.append(smeu)
     save(state)
@@ -71,7 +90,7 @@ def add_smeu(state, trv_smeuj, author, inspiration, date, time, content,
     trv_smeuj.yview("moveto", 1.0)
 
 def change_chat_entry(index, state, author, inspiration, date, time, content,
-        example):
+        example, ex_author, ex_date, ex_time):
     state.selected_smeu = None
     state.index = index
     if state.index < 0:
@@ -85,18 +104,22 @@ def change_chat_entry(index, state, author, inspiration, date, time, content,
     time.set(entry["time"])
     content.set(entry["message"].lower())
     example.set("")
+    ex_author.set("")
+    ex_date.set("")
+    ex_time.set("")
 
 def change_chat_entry_to_selected(event, trv_chat, state, author, inspiration,
-        date, time, content, example):
+        date, time, content, example, ex_author, ex_date, ex_time):
     selection = trv_chat.identify("item", event.x, event.y)
     if selection:
         change_chat_entry(
             trv_chat.index(selection), state,
-            author, inspiration, date, time, content, example
+            author, inspiration, date, time, content, example,
+            ex_author, ex_date, ex_time
         )
 
 def change_smeu_entry_to_selected(event, trv_smeuj, state, author, inspiration,
-        date, time, content, example):
+        date, time, content, example, ex_author, ex_date, ex_time):
     state.selected_smeu = None
     selection = trv_smeuj.identify("item", event.x, event.y)
     if not selection:
@@ -108,12 +131,22 @@ def change_smeu_entry_to_selected(event, trv_smeuj, state, author, inspiration,
     date.set(entry["date"])
     time.set(entry["time"])
     content.set(entry["content"])
-    example.set(
-        entry["examples"][0]["content"]
-        if entry["examples"] else ""
-    )
+    if entry["examples"]:
+        get_str = lambda name: intercalate_str(
+            [example[name] for example in entry["examples"]], ";"
+        )
+        example.set(get_str("content"))
+        ex_author.set(get_str("author"))
+        ex_date.set(get_str("date"))
+        ex_time.set(get_str("time"))
+    else:
+        example.set("")
+        ex_author.set("")
+        ex_date.set("")
+        ex_time.set("")
 
-def edit(state, trv_smeuj, author, inspiration, date, time, content, example):
+def edit(state, trv_smeuj, author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time):
     if not state.selected_smeu:
         return
     selection = trv_smeuj.selection()
@@ -122,7 +155,8 @@ def edit(state, trv_smeuj, author, inspiration, date, time, content, example):
         state.selected_smeu = None
         return
     smeu = make_smeu(
-        author, inspiration, date, time, content, example
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
     )
     state.smeuj[state.selected_smeu] = smeu
     trv_smeuj.delete(*selection)
@@ -221,6 +255,15 @@ def setup_ui(state):
     example         = tk.StringVar()
     lbl_example     = tk.Label(text = "Example")
     ent_example     = tk.Entry(textvariable = example)
+    ex_author       = tk.StringVar()
+    lbl_ex_author   = tk.Label(text = "Example author")
+    ent_ex_author   = tk.Entry(textvariable = ex_author)
+    ex_date         = tk.StringVar()
+    lbl_ex_date     = tk.Label(text = "Example date")
+    ent_ex_date     = tk.Entry(textvariable = ex_date)
+    ex_time         = tk.StringVar()
+    lbl_ex_time     = tk.Label(text = "Example time")
+    ent_ex_time     = tk.Entry(textvariable = ex_time)
 
     trv_smeuj.pack()
     trv_chat.pack()
@@ -236,25 +279,35 @@ def setup_ui(state):
     ent_content.pack()
     lbl_example.pack()
     ent_example.pack()
+    lbl_ex_author.pack()
+    ent_ex_author.pack()
+    lbl_ex_date.pack()
+    ent_ex_date.pack()
+    lbl_ex_time.pack()
+    ent_ex_time.pack()
 
     trv_chat.bind("<Button-1>", lambda event: change_chat_entry_to_selected(
         event, trv_chat, state,
-        author, inspiration, date, time, content, example
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
     ))
     trv_smeuj.bind("<Button-1>", lambda event: change_smeu_entry_to_selected(
         event, trv_smeuj, state,
-        author, inspiration, date, time, content, example
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
     ))
     btn_add  = tk.Button(text = "Add",  command = apply(
         add_smeu, state, trv_smeuj,
-        author, inspiration, date, time, content, example
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
     ))
     btn_delete = tk.Button(text = "Delete", command = apply(
         delete, state, trv_smeuj
     ))
     btn_edit = tk.Button(text = "Edit", command = apply(
         edit, state, trv_smeuj,
-        author, inspiration, date, time, content, example
+        author, inspiration, date, time, content,
+        example, ex_author, ex_date, ex_time
     ))
 
     btn_add.pack()
