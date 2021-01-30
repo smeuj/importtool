@@ -113,20 +113,6 @@ def change_smeu_entry_to_selected(event, trv_smeuj, state, author, inspiration,
         if entry["examples"] else ""
     )
 
-def decrement_chat_entry(state, author, inspiration, date, time, content,
-        example):
-    change_chat_entry(
-        state.index - 1, state,
-        author, inspiration, date, time, content, example
-    )
-
-def increment_chat_entry(state, author, inspiration, date, time, content,
-        example):
-    change_chat_entry(
-        state.index + 1, state,
-        author, inspiration, date, time, content, example
-    )
-
 def edit(state, trv_smeuj, author, inspiration, date, time, content, example):
     if not state.selected_smeu:
         return
@@ -266,22 +252,12 @@ def setup_ui(state):
     btn_delete = tk.Button(text = "Delete", command = apply(
         delete, state, trv_smeuj
     ))
-    btn_next = tk.Button(text = "Next", command = apply(
-        increment_chat_entry, state,
-        author, inspiration, date, time, content, example
-    ))
-    btn_prev = tk.Button(text = "Previous", command = apply(
-        decrement_chat_entry, state,
-        author, inspiration, date, time, content, example
-    ))
     btn_edit = tk.Button(text = "Edit", command = apply(
         edit, state, trv_smeuj,
         author, inspiration, date, time, content, example
     ))
 
     btn_add.pack()
-    # btn_next.pack()
-    # btn_prev.pack()
     btn_delete.pack()
     btn_edit.pack()
 
